@@ -9,43 +9,33 @@ import torch.optim as optim
 import time
 from pathlib import Path
 #from torch.utils.tensorboard import SummaryWriter
-import wandb
+#import wandb
+from utils.kari_road_dataset import KariRoadDataset
+#from utils.metrics import ConfusionMatrix
+#from utils.loss import ce_loss
+from utils.plots import plot_image
 
 def train(opt):
     epochs = opt.epochs
     batch_size = opt.batch_size
     name = opt.name
     # Wandb settings
-    wandb.init(id=opt.name, resume='allow')
-    wandb.config.update(opt)
-    
-    # tensorboard settings
-    #log_dir = Path('logs')/name
-    #tb_writer = SummaryWriter(log_dir=log_dir)
-    # Augmentation
-    train_transforms = transforms.Compose([transforms.RandomCrop(32, padding=4),
-                transforms.RandomHorizontalFlip(),
-                transforms.ToTensor(),
-                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2471, 0.2435, 0.2616))])
-
-    val_transforms = transforms.Compose([transforms.ToTensor(),
-                transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2471, 0.2435, 0.2616))])
+    #wandb.init(id=opt.name, resume='allow')
+    #wandb.config.update(opt)
 
     # Train dataset
-    train_dataset = torchvision.datasets.CIFAR10('./data', train=True, download=True, 
-                                                    transform=train_transforms)
-    classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
+    train_dataset = KariRoadDataset('./data/kari-road', train=True)
     # Train dataloader
     num_workers = min([min([os.cpu_count(), 32]), batch_size])  
     train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, 
-                            shuffle=True, num_workers=num_workers, drop_last=True)
+                            shuffle=True, num_workers=num_workers, drop_last=False)
 
     # Validation dataset
-    val_dataset = torchvision.datasets.CIFAR10('./data', train=False, download=True,
-                                                    transform=val_transforms)
+    val_dataset = KariRoadDataset('./data/kari-road', train=False)
+    # Validation dataloader
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, 
-                            shuffle=True, num_workers=num_workers, drop_last=True)
-    
+                            shuffle=True, num_workers=num_workers, drop_last=False)
+     
     # Network model
     model = MyVGG11()
 
@@ -161,7 +151,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--epochs', type=int, default=200, help='target epochs')
     parser.add_argument('--batch-size', type=int, default=4096, help='batch size')
-    parser.add_argument('--name', default='handoe_my_vgg', help='name for the run')
+    parser.add_argument('--name', default='road', help='name for the run')
     parser.add_argument('--amp', action='store_true', help='use of amp')
 
     opt = parser.parse_args()
